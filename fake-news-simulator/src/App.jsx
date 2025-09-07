@@ -1,6 +1,22 @@
 import { useState, useEffect } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { myGraphData } from './data';
+import manAvatar from '../public/avatars/man.png';
+import womanAvatar from '../public/avatars/woman.png';
+import influencerIcon from '../public/groups/influencer.png';
+import familyIcon from '../public/groups/family.png';
+import followerIcon from '../public/groups/follower.png';
+import friendIcon from '../public/groups/friend.png';
+  const avatarMap = {
+    'man.png': manAvatar,
+    'woman.png': womanAvatar
+  };
+  const groupIconMap = {
+    'Influencer': influencerIcon,
+    'Family': familyIcon,
+    'Follower': followerIcon,
+    'Friend': friendIcon
+  };
 
 function App() {
   // useState receives an initial state and returns an array with the current state and a function to update it upon changes, which is destructured into two variables
@@ -89,6 +105,35 @@ function App() {
 
   return (
     <>
+      {/* Legenda dos grupos */}
+      <div style={{
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        background: 'rgba(255,255,255,0.9)',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        padding: '12px 18px',
+        zIndex: 10,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        color: 'black'
+      }}>
+        <div style={{ fontWeight: 'bold', marginBottom: 8, color: 'black' }}>Legenda dos Grupos</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'black' }}>
+            <img src={influencerIcon} alt="Influencer" width={20} height={20} /> Influencer
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'black' }}>
+            <img src={familyIcon} alt="Family" width={20} height={20} /> Family
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'black' }}>
+            <img src={followerIcon} alt="Follower" width={20} height={20} /> Follower
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'black' }}>
+            <img src={friendIcon} alt="Friend" width={20} height={20} /> Friend
+          </span>
+        </div>
+      </div>
       <div style={{ padding: '5px',textAlign: 'center' }}>
         <h2>Simulação de Propagação de Fake News</h2>
         <p>Nós Atingidos: {Object.keys(infectedNodes).length} de {graphData.nodes.length}</p>
@@ -114,11 +159,45 @@ function App() {
           linkLabel="weight"
           linkDirectionalArrowLength={3.5}
           linkDirectionalArrowRelPos={1}
-          // nodeAutoColorBy="group"
-          // it's abstracted from us by the framework, but an eventListener injects the dependencies in the functions passed below
           onNodeClick={handleNodeClick}
           nodeColor={nodeColor}
           linkColor={linkColor}
+          nodeCanvasObject={(node, ctx, globalScale) => {
+            // Escolhe avatar pelo nome (alternando para exemplo)
+            const img = new window.Image();
+            img.src = (node.id === 'Alice' || node.id === 'Carla' || node.id === 'Eva' || node.id === '7' || node.id === '9') ? womanAvatar : manAvatar;
+            // Ícone do grupo
+            const groupImg = new window.Image();
+            groupImg.src = groupIconMap[node.group] || friendIcon;
+
+            // Desenha círculo colorido (infectado ou não)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 12, 0, 2 * Math.PI, false);
+            ctx.closePath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = infectedNodes.hasOwnProperty(node.id) ? 'red' : 'lightgrey';
+            ctx.stroke();
+            ctx.clip();
+            ctx.drawImage(img, node.x - 10, node.y - 10, 20, 20);
+            ctx.restore();
+
+            // Desenha ícone do grupo (canto inferior direito)
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(node.x + 8, node.y + 8, 5, 0, 2 * Math.PI, false);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(groupImg, node.x + 3, node.y + 3, 10, 10);
+            ctx.restore();
+
+            // Nome do nó
+            ctx.font = `${12/globalScale}px Sans-Serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = 'white';
+            ctx.fillText(node.id, node.x, node.y + 16);
+          }}
         />
       </div>
     </>
