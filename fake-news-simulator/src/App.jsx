@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { myGraphData } from './data';
 import manAvatar from '../public/avatars/man.png';
@@ -7,23 +7,33 @@ import influencerIcon from '../public/groups/influencer.png';
 import familyIcon from '../public/groups/family.png';
 import followerIcon from '../public/groups/follower.png';
 import friendIcon from '../public/groups/friend.png';
-  const avatarMap = {
-    'man.png': manAvatar,
-    'woman.png': womanAvatar
-  };
-  const groupIconMap = {
-    'Influencer': influencerIcon,
-    'Family': familyIcon,
-    'Follower': followerIcon,
-    'Friend': friendIcon
-  };
+  
+const avatarMap = {
+  'man.png': manAvatar,
+  'woman.png': womanAvatar
+};
+  
+const groupIconMap = {
+  'Influencer': influencerIcon,
+  'Family': familyIcon,
+  'Follower': followerIcon,
+  'Friend': friendIcon
+};
+
+const linkWeightMap = {
+  'Family': 0.3,
+  'Follower': 0.9,
+  'Friend': 0.6
+};
 
 function App() {
   // useState receives an initial state and returns an array with the current state and a function to update it upon changes, which is destructured into two variables
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [infectedNodes, setInfectedNodes] = useState({});
   const [bfsQueue, setBfsQueue] = useState([]);
-  const [intensity, setIntensity] = useState(0.5); // Valor inicial entre 0 e 1
+  const [delay, setDelay] = useState(1); // 500ms
+  const fgRef = useRef();
+  const initialNodeId = Object.keys(infectedNodes)[0];
 
   // TO DO:
   // 1. Keep the colouring by groups?
@@ -56,10 +66,10 @@ function App() {
     // run BFS
     for(const link of outgoingLinks){
       const neighbourId = link.target.id;
-      const probability = link.weight + intensity;
+      let probability = linkWeightMap[link.type];
       
       // checks the node, marks and enqueue it
-      if(!infectedNodes.hasOwnProperty(neighbourId) && Math.random() < Math.min(1,probability)) {
+      if(!infectedNodes.hasOwnProperty(neighbourId) && 0.0 < Math.min(1,probability)) {
         newNodesToInfect.push({id: neighbourId, step: step + 1})
       }
     }
@@ -80,8 +90,18 @@ function App() {
         return [...newQueue, ...newNodesToInfect];
       });
     // spread delay
-    }, 750);
+    }, 1150 - delay*100);
   }, [bfsQueue, infectedNodes, graphData])
+
+  useEffect(() => {
+    if (fgRef.current) {
+      // Repulsion force (the nodes do the pushing work)
+      fgRef.current.d3Force('charge').strength(-400); 
+      
+      // Atraction force (the links do the pulling work)
+      //fgRef.current.d3Force('link').distance(link => linkWeightMap[link.type] * 50); 
+    }
+  }, []);
 
   const handleNodeClick = (node) => {
     // Resets the graph and calls useEffect()
@@ -118,8 +138,8 @@ function App() {
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         color: 'black'
       }}>
-        <div style={{ fontWeight: 'bold', marginBottom: 8, color: 'black' }}>Legenda dos Grupos</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontWeight: 'bold', marginBottom: 8, color: 'black' }}>Legenda dos Grupos</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'black' }}>
             <img src={influencerIcon} alt="Influencer" width={20} height={20} /> Influencer
           </span>
@@ -134,43 +154,47 @@ function App() {
           </span>
         </div>
       </div>
-      <div style={{ padding: '5px',textAlign: 'center' }}>
+
+      <div style={{ textAlign: 'center' }}>
         <h2>Simulação de Propagação de Fake News</h2>
         <p>Nós Atingidos: {Object.keys(infectedNodes).length} de {graphData.nodes.length}</p>
         <p>Passos da Propagação: {Math.max(0, ...Object.values(infectedNodes))}</p>
+        {initialNodeId && <p>Nó Inicial: {initialNodeId}</p>}
       </div>
 
-      <div style={{ padding: '5px',textAlign: 'center' }}>
-        <label>Intensidade da Fake News:</label>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '20px auto', maxWidth: '80%' }}>
+        <label style={{paddingRight: '10px'}}>Intensidade da Fake News:</label>
         <input 
           type="range" 
-          min="0" 
-          max="1" 
-          step="0.01" 
-          value={intensity} 
-          onChange={(e) => setIntensity(parseFloat(e.target.value))}
+          min="1" 
+          max="10" 
+          step="1" 
+          value={delay} 
+          onChange={(e) => setDelay(parseFloat(e.target.value))}
         />
-        <span>{intensity.toFixed(2)}</span>
+        <span style={{paddingLeft: '10px'}}>{delay.toFixed(2)}</span>
       </div>
       <div style={{ width: '100vw', height: '100vh'}}>
         <ForceGraph2D
+          ref={fgRef}
           graphData={graphData}
           nodeLabel="id"
-          linkLabel="weight"
-          linkDirectionalArrowLength={3.5}
+          linkLabel="type"
+          linkDirectionalArrowLength={7}
           linkDirectionalArrowRelPos={1}
           onNodeClick={handleNodeClick}
           nodeColor={nodeColor}
           linkColor={linkColor}
+          nodeRelSize={13}
           nodeCanvasObject={(node, ctx, globalScale) => {
-            // Escolhe avatar pelo nome (alternando para exemplo)
+            // Choosing avatar 
             const img = new window.Image();
-            img.src = (node.id === 'Alice' || node.id === 'Carla' || node.id === 'Eva' || node.id === '7' || node.id === '9') ? womanAvatar : manAvatar;
-            // Ícone do grupo
+            img.src = (node.avatar === 'woman.png') ? womanAvatar : manAvatar;
+            // Choosing group icon
             const groupImg = new window.Image();
             groupImg.src = groupIconMap[node.group] || friendIcon;
 
-            // Desenha círculo colorido (infectado ou não)
+            // Draw colored circle (infected or not)
             ctx.save();
             ctx.beginPath();
             ctx.arc(node.x, node.y, 12, 0, 2 * Math.PI, false);
@@ -182,7 +206,7 @@ function App() {
             ctx.drawImage(img, node.x - 10, node.y - 10, 20, 20);
             ctx.restore();
 
-            // Desenha ícone do grupo (canto inferior direito)
+            // Draw group icon (bottom right corner)
             ctx.save();
             ctx.beginPath();
             ctx.arc(node.x + 8, node.y + 8, 5, 0, 2 * Math.PI, false);
@@ -191,7 +215,7 @@ function App() {
             ctx.drawImage(groupImg, node.x + 3, node.y + 3, 10, 10);
             ctx.restore();
 
-            // Nome do nó
+            // Node name
             ctx.font = `${12/globalScale}px Sans-Serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
