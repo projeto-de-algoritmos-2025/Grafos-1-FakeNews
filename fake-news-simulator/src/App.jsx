@@ -50,6 +50,7 @@ function App() {
   const fgRef = useRef();
   const initialNodeId = Object.keys(infectedNodes)[0];
   const [linksByNode, setLinksByNode] = useState({});
+  const [infectedLinks, setInfectedLinks] = useState({});
 
   // TO DO:
   // 1. Keep the colouring by groups? - Fuhgettaboutit
@@ -80,6 +81,7 @@ function App() {
     // "dequeue"
     const { id, step } = bfsQueue[0];
     const newNodesToInfect = [];
+    const newLinksToInfect = {};
     
     // getting neighbour nodes in O(1)
     const outgoingLinks = linksByNode[id] || [];
@@ -91,7 +93,9 @@ function App() {
       
       // checks the node, marks and enqueue it
       if(!infectedNodes.hasOwnProperty(neighbourId) && 0.0 < Math.min(1,probability)) {
-        newNodesToInfect.push({id: neighbourId, step: step + 1})
+        newNodesToInfect.push({id: neighbourId, step: step + 1});
+        const linkKey = `${id}-${neighbourId}`;
+        newLinksToInfect[linkKey] = true;
       }
     }
 
@@ -103,6 +107,10 @@ function App() {
           newInfected[node.id] = node.step;
         });
         return newInfected;
+      })
+
+      setInfectedLinks(prev => {
+        return { ...prev, ...newLinksToInfect };
       })
 
       setBfsQueue(prevQueue => {
@@ -120,13 +128,14 @@ function App() {
       fgRef.current.d3Force('charge').strength(-400); 
       
       // Atraction force (the links do the pulling work)
-      //fgRef.current.d3Force('link').distance(link => linkWeightMap[link.type] * 50); 
+      fgRef.current.d3Force('link').distance(link => linkWeightMap[link.type] * 50); 
     }
   }, []);
 
   const handleNodeClick = (node) => {
     // Resets the graph and calls useEffect()
     setInfectedNodes({ [node.id]: 0 });
+    setInfectedLinks({});
     setBfsQueue([{ id: node.id, step: 0 }]);
   };
 
@@ -134,10 +143,8 @@ function App() {
   const nodeColor = node => {return infectedNodes.hasOwnProperty(node.id) ? 'red' : 'lightgrey'}
 
   const linkColor = link => {
-    const sourceInfected = infectedNodes.hasOwnProperty(link.source.id);
-    const targetInfected = infectedNodes.hasOwnProperty(link.target.id);
-
-    if (sourceInfected && targetInfected) {
+    const linkKey = `${link.source.id || link.source}-${link.target.id || link.target}`;
+    if (infectedLinks[linkKey]) {
       return 'orange';
     }
     return 'lightgreen'

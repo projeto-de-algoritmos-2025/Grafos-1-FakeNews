@@ -17,8 +17,8 @@ Este trabalho tem como objetivo simular a propagação de notícias, utilizando 
 
 ## Linguagem e Framework
 
-**Linguagem**: Javascript
-**Framework**: React
+* **Linguagem**: Javascript
+* **Framework**: React
 
 ## Apresentação
 
