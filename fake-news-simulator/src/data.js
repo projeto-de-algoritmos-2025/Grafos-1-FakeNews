@@ -5,7 +5,11 @@ export const myGraphData = {
     { id: 'Carla', group: 'Family' },
     { id: 'David', group: 'Follower' },
     { id: 'Eva', group: 'Follower' },
-    { id: 'Frank', group: 'Friend' }
+    { id: '6', group: 'Friend' },
+    { id: '7', group: 'Friend' },
+    { id: '8', group: 'Friend' },
+    { id: '9', group: 'Friend' },
+    { id: '10', group: 'Friend' },
   ],
   links: [
     { source: 'Alice', target: 'Bob', weight: 0.8 },
@@ -13,7 +17,12 @@ export const myGraphData = {
     { source: 'Alice', target: 'Carla', weight: 0.3 },
     { source: 'Alice', target: 'David', weight: 0.9 },
     { source: 'Bob', target: 'Eva', weight: 0.5 },
+    { source: 'Bob', target: 'Alice', weight: 0.5 },
     { source: 'David', target: 'Eva', weight: 0.7 },
-    { source: 'Carla', target: 'Frank', weight: 0.4 }
+    { source: '10', target: '7', weight: 0.4 },
+    { source: 'Eva', target: '10', weight: 0.4 },
+    { source: 'Carla', target: '9', weight: 0.4 },
+    { source: 'Carla', target: '6', weight: 0.4 },
+    { source: '6', target: '8', weight: 0.4 },
   ]
 };
