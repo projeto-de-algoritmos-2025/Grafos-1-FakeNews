@@ -22,7 +22,7 @@ Este trabalho tem como objetivo simular a propagação de notícias, utilizando 
 
 ## Apresentação
 
-A apresentação do projeto pode ser acessada [aqui](https://www.youtube.com/).
+A apresentação do projeto pode ser acessada [aqui](https://www.youtube.com/watch?v=619Lp_d7gGU).
 
 ## Guia de Instalação
 
